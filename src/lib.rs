@@ -5,15 +5,8 @@ mod template;
 
 use mlua::prelude::*;
 
-fn hello(_: &Lua, name: String) -> LuaResult<()> {
-    println!("hello, {}!", name);
-    Ok(())
-}
-
-fn t_module(lua: &Lua) -> LuaResult<LuaTable> {
+fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
-    exports.set("hello", lua.create_function(hello)?)?;
-    // let image_table = lua.create_table()?;
 
     let create_image = lua.create_function(|_, path: String| {
         let image = image::Image::new(&path);
@@ -24,8 +17,8 @@ fn t_module(lua: &Lua) -> LuaResult<LuaTable> {
 
     exports.set(
         "generate_pants",
-        lua.create_function(|_, path: String| {
-            let res = pants::generate_pants(path);
+        lua.create_function(|_, (path, hide_body): (String, bool)| {
+            let res = pants::generate_pants(path, hide_body);
             Ok(res)
         })?,
     )?;
@@ -34,5 +27,5 @@ fn t_module(lua: &Lua) -> LuaResult<LuaTable> {
 
 #[no_mangle]
 pub unsafe extern "C-unwind" fn my_module(state: *mut mlua::lua_State) -> ::std::os::raw::c_int {
-    mlua::Lua::entrypoint1(state, move |lua| t_module(lua))
+    mlua::Lua::entrypoint1(state, move |lua| lua_module(lua))
 }
