@@ -26,6 +26,8 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
 }
 
 #[no_mangle]
-pub unsafe extern "C-unwind" fn my_module(state: *mut mlua::lua_State) -> ::std::os::raw::c_int {
+pub unsafe extern "C-unwind" fn fleurs_module(
+    state: *mut mlua::lua_State,
+) -> ::std::os::raw::c_int {
     mlua::Lua::entrypoint1(state, move |lua| lua_module(lua))
 }
