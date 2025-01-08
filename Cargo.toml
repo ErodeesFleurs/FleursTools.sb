@@ -1,0 +1,11 @@
+[package]
+name = "test_code"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+mlua = { version = "0.10.2", features = ["lua53", "vendored"] }
+image = "*"
