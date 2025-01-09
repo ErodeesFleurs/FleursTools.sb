@@ -52,24 +52,30 @@ pub fn to_color_table(img: &Image, options: ImageParseOptions) -> Vec<Vec<String
                 rows[y as usize].push("".to_string());
                 continue;
             }
-            let hex = to_hex(&[
-                pixel[0] as usize,
-                pixel[1] as usize,
-                pixel[2] as usize,
-                pixel[3] as usize,
-            ]);
+            let hex = to_hex(&[pixel[0], pixel[1], pixel[2], pixel[3]]);
             rows[y as usize].push(hex);
         }
     }
     rows
 }
 
-pub fn to_hex(arr: &[usize]) -> String {
-    if arr.len() == 3 || arr[3] == 255 {
-        format!("{:02x}{:02x}{:02x}", arr[0], arr[1], arr[2])
-    } else {
-        format!("{:02x}{:02x}{:02x}{:02x}", arr[0], arr[1], arr[2], arr[3])
+pub fn to_hex(arr: &[u8]) -> String {
+    let mut c_arr = arr;
+    if arr.len() == 4 && arr[3] == 255 {
+        c_arr = &arr[0..3];
     }
+    let shorten = c_arr.iter().all(|&x| x % 17 == 0);
+    let s = c_arr
+        .iter()
+        .map(|x| {
+            let mut s = format!("{:02x}", x);
+            if shorten {
+                s = s.chars().last().unwrap().to_string();
+            }
+            s
+        })
+        .collect::<String>();
+    s
 }
 
 pub fn diffrent(from: Vec<Vec<String>>, to: Vec<Vec<String>>) -> HashMap<String, String> {
@@ -77,7 +83,7 @@ pub fn diffrent(from: Vec<Vec<String>>, to: Vec<Vec<String>>) -> HashMap<String,
     for (y, row) in from.iter().enumerate() {
         for (x, a) in row.iter().enumerate() {
             let b = to[y][x].clone();
-            if b.is_empty() {
+            if b.is_empty() || a.is_empty() {
                 continue;
             }
             swaps.insert(a.clone(), b);

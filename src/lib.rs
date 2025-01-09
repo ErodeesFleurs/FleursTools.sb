@@ -27,8 +27,8 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     exports.set(
         "generate_chest",
         lua.create_function(
-            |_, (front_sleeve_path, chest_path, back_sleeve_path): (String, String, String)| {
-                let res = chest::generate_chest(front_sleeve_path, chest_path, back_sleeve_path);
+            |_, (chest_path, front_sleeve_path, back_sleeve_path): (String, String, String)| {
+                let res = chest::generate_chest(chest_path, front_sleeve_path, back_sleeve_path);
                 Ok(res)
             },
         )?,
