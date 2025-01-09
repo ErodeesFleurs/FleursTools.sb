@@ -1,3 +1,4 @@
+mod back;
 mod chest;
 mod directives;
 mod image;
@@ -32,6 +33,14 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
                 Ok(res)
             },
         )?,
+    )?;
+
+    exports.set(
+        "generate_back",
+        lua.create_function(|_, back_path: String| {
+            let res = back::generate_back(back_path);
+            Ok(res)
+        })?,
     )?;
 
     Ok(exports)
