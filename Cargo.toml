@@ -6,6 +6,11 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
-[dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 mlua = { version = "0.10.2", features = ["lua53", "vendored"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+mlua = { version = "0.10.2", features = ["lua53", "module"] }
+
+[dependencies]
 image = "*"
