@@ -25,6 +25,7 @@ pub fn generate_hat(hat_path: String) -> String {
             .collect(),
     );
     let diffrent = image::diffrent(template_hat, color_hat);
+
     let res = CHEST_DIRECTIVES.to_string() + &directives::to_replace(diffrent, false);
     res
 }
