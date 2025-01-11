@@ -25,8 +25,8 @@ pub fn generate_back(back_path: String) -> String {
         },
     );
     let template_back = create(
-        8,
-        8,
+        43,
+        43,
         BACK_TEMPLATE_FRAMES
             .iter()
             .map(|x| x.iter().map(|x| x.to_string()).collect())

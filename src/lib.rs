@@ -1,6 +1,7 @@
 mod back;
 mod chest;
 mod directives;
+mod hat;
 mod image;
 mod pants;
 mod template;
@@ -39,6 +40,14 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
         "generate_back",
         lua.create_function(|_, back_path: String| {
             let res = back::generate_back(back_path);
+            Ok(res)
+        })?,
+    )?;
+
+    exports.set(
+        "generate_hat",
+        lua.create_function(|_, hat_path: String| {
+            let res = hat::generate_hat(hat_path);
             Ok(res)
         })?,
     )?;
