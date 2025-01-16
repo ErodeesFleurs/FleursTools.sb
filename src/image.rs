@@ -1,5 +1,4 @@
 use image::GenericImageView;
-use mlua::{MetaMethod, UserData};
 use std::collections::HashMap;
 
 pub struct Image {
@@ -23,18 +22,6 @@ impl Image {
 
     pub fn get_pixel(&self, x: u32, y: u32) -> image::Rgba<u8> {
         self.img.get_pixel(x, y)
-    }
-}
-
-impl UserData for Image {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("width", |_, this, _: ()| Ok(this.weight()));
-        methods.add_method("height", |_, this, _: ()| Ok(this.height()));
-        methods.add_meta_function(MetaMethod::Call, |_, path: String| Ok(Image::new(&path)));
-    }
-
-    fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
-        let _ = fields;
     }
 }
 
