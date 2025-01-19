@@ -1,28 +1,86 @@
-use image::GenericImageView;
 use std::collections::HashMap;
 
+use mlua::AnyUserData;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct Image {
-    img: image::DynamicImage,
+    data: *mut u8,
+    width: u32,
+    height: u32,
+    format: PixelFormat,
 }
 
+#[allow(dead_code)]
+#[repr(u8)]
+#[derive(Debug, Copy, Clone)]
+pub enum PixelFormat {
+    RGB24 = 0,
+    RGBA32 = 1,
+    BGR24 = 2,
+    BGRA32 = 3,
+    RGBF = 4,
+    RGBAF = 5,
+}
+
+#[allow(dead_code)]
 impl Image {
-    pub fn new(path: &str) -> Self {
+    pub fn new(data: *mut u8, width: u32, height: u32, format: PixelFormat) -> Self {
         Self {
-            img: image::open(path).unwrap(),
+            data,
+            width,
+            height,
+            format,
         }
     }
 
     pub fn weight(&self) -> u32 {
-        self.img.width()
+        self.width
     }
 
     pub fn height(&self) -> u32 {
-        self.img.height()
+        self.height
     }
 
-    pub fn get_pixel(&self, x: u32, y: u32) -> image::Rgba<u8> {
-        self.img.get_pixel(x, y)
+    pub fn bytes_per_pixel(&self) -> usize {
+        match self.format {
+            PixelFormat::RGB24 | PixelFormat::BGR24 => 3,
+            PixelFormat::RGBA32 | PixelFormat::BGRA32 => 4,
+            PixelFormat::RGBF => 12,
+            PixelFormat::RGBAF => 16,
+        }
     }
+
+    pub fn get_pixel(&self, x: u32, y: u32) -> [u8; 4] {
+        let offset = ((y * self.width + x) * self.bytes_per_pixel() as u32) as usize;
+        let mut pixel: [u8; 4] = [0; 4];
+        match self.bytes_per_pixel() {
+            4 => unsafe {
+                pixel[0] = *self.data.add(offset);
+                pixel[1] = *self.data.add(offset + 1);
+                pixel[2] = *self.data.add(offset + 2);
+                pixel[3] = *self.data.add(offset + 3);
+            },
+
+            3 => {
+                pixel[0] = unsafe { *self.data.add(offset) };
+                pixel[1] = unsafe { *self.data.add(offset + 1) };
+                pixel[2] = unsafe { *self.data.add(offset + 2) };
+                pixel[3] = 255;
+            }
+            _ => panic!("Unsupported bytes per pixel"),
+        }
+        pixel
+    }
+}
+
+pub fn read_image(userdata: AnyUserData) -> &'static Image {
+    let img: &Image;
+    unsafe {
+        let raw_ptr = userdata.to_pointer() as *const Image;
+        img = &*raw_ptr;
+    }
+    img
 }
 
 pub struct ImageParseOptions {
@@ -30,17 +88,15 @@ pub struct ImageParseOptions {
 }
 
 pub fn to_color_table(img: &Image, options: ImageParseOptions) -> Vec<Vec<String>> {
-    let mut rows = vec![];
+    let mut rows = vec![vec!["".to_string(); img.weight() as usize]; img.height() as usize];
     for y in 0..img.height() {
-        rows.push(vec![]);
         for x in 0..img.weight() {
             let pixel = img.get_pixel(x, y);
             if options.skip_transparent && pixel[3] == 0 {
-                rows[y as usize].push("".to_string());
                 continue;
             }
             let hex = to_hex(&[pixel[0], pixel[1], pixel[2], pixel[3]]);
-            rows[y as usize].push(hex);
+            rows[(img.height() - 1 - y) as usize][x as usize] = hex;
         }
     }
     rows

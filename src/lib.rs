@@ -6,15 +6,24 @@ mod pants;
 mod template;
 mod utils;
 
+use crate::utils::image::read_image;
 use mlua::prelude::*;
 
 fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
 
     exports.set(
+        "get_image_size",
+        lua.create_function(|_, userdata: LuaAnyUserData| {
+            read_image(userdata);
+            Ok(())
+        })?,
+    )?;
+
+    exports.set(
         "generate_pants",
-        lua.create_function(|_, (path, hide_body): (String, bool)| {
-            let res = pants::generate_pants(path, hide_body);
+        lua.create_function(|_, (userdata, hide_body): (LuaAnyUserData, bool)| {
+            let res = pants::generate_pants(*read_image(userdata), hide_body);
             Ok(res)
         })?,
     )?;
@@ -22,8 +31,17 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     exports.set(
         "generate_chest",
         lua.create_function(
-            |_, (chest_path, front_sleeve_path, back_sleeve_path): (String, String, String)| {
-                let res = chest::generate_chest(chest_path, front_sleeve_path, back_sleeve_path);
+            |_,
+             (torso_userdata, front_sleeve_userdata, back_sleeve_userdata): (
+                LuaAnyUserData,
+                LuaAnyUserData,
+                LuaAnyUserData,
+            )| {
+                let res = chest::generate_chest(
+                    *read_image(torso_userdata),
+                    *read_image(front_sleeve_userdata),
+                    *read_image(back_sleeve_userdata),
+                );
                 Ok(res)
             },
         )?,
@@ -31,16 +49,16 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
 
     exports.set(
         "generate_back",
-        lua.create_function(|_, back_path: String| {
-            let res = back::generate_back(back_path);
+        lua.create_function(|_, userdata: LuaAnyUserData| {
+            let res = back::generate_back(*read_image(userdata));
             Ok(res)
         })?,
     )?;
 
     exports.set(
         "generate_hat",
-        lua.create_function(|_, hat_path: String| {
-            let res = hat::generate_hat(hat_path);
+        lua.create_function(|_, userdata: LuaAnyUserData| {
+            let res = hat::generate_hat(*read_image(userdata));
             Ok(res)
         })?,
     )?;
