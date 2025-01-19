@@ -46,10 +46,11 @@ jobs:
           cp -r target/release/* dist/
           zip -r linux-package.zip dist/
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-binary
           path: linux-package.zip
+          retention-days: 2
 
   build-windows:
     name: Build on Windows
@@ -88,7 +89,8 @@ jobs:
           copy target\release\* dist\
           powershell Compress-Archive -Path dist\* -DestinationPath windows-package.zip
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-binary
           path: windows-package.zip
+          retention-days: 2
