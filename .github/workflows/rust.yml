@@ -92,7 +92,7 @@ jobs:
           powershell Compress-Archive -Path dist\* -DestinationPath windows-package.zip
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-binary
           path: windows-package.zip
