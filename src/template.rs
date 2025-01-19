@@ -1,4 +1,4 @@
-use crate::image::to_hex;
+use crate::utils::image::to_hex;
 
 pub fn create(frame_width: u8, frame_height: u8, frames: Vec<Vec<String>>) -> Vec<Vec<String>> {
     let vertical_frames = frames.len() as u8;

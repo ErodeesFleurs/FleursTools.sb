@@ -2,9 +2,9 @@ mod back;
 mod chest;
 mod directives;
 mod hat;
-mod image;
 mod pants;
 mod template;
+mod utils;
 
 use mlua::prelude::*;
 

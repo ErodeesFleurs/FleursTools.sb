@@ -1,5 +1,5 @@
 use crate::directives;
-use crate::image;
+use crate::utils::image;
 
 use crate::template::create;
 
