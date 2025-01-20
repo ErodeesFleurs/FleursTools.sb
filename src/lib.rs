@@ -5,26 +5,27 @@ use mlua::prelude::*;
 
 fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
-
-    exports.set(
+    let outfit = lua.create_table()?;
+    outfit.set(
         "generate_pants",
         lua.create_function(outfit::pants::lua_generate)?,
     )?;
 
-    exports.set(
+    outfit.set(
         "generate_chest",
         lua.create_function(outfit::chest::lua_generate)?,
     )?;
 
-    exports.set(
+    outfit.set(
         "generate_back",
         lua.create_function(outfit::back::lua_generate)?,
     )?;
 
-    exports.set(
+    outfit.set(
         "generate_hat",
         lua.create_function(outfit::hat::lua_generate)?,
     )?;
+    exports.set("outfit", outfit)?;
 
     Ok(exports)
 }
