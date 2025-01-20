@@ -78,16 +78,16 @@ impl Image {
     }
 }
 
-pub fn read_image(userdata: AnyUserData) -> &'static Image {
+pub fn read_image(userdata: AnyUserData) -> Image {
     let img: &Image;
     unsafe {
         let raw_ptr = userdata.to_pointer() as *const Image;
         img = &*raw_ptr;
     }
-    img
+    *img
 }
 
-pub fn to_color_table(img: &Image, options: ImageParseOptions) -> Vec<Vec<String>> {
+pub fn to_color_table(img: Image, options: ImageParseOptions) -> Vec<Vec<String>> {
     let mut rows = vec![vec!["".to_string(); img.weight() as usize]; img.height() as usize];
     for y in 0..img.height() {
         for x in 0..img.weight() {
