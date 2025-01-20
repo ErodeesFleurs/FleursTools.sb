@@ -1,7 +1,6 @@
-use crate::directives;
+use crate::utils::directives;
 use crate::utils::image::{self, Image};
-
-use crate::template::create;
+use crate::utils::template::create;
 
 const PANTS_TEMPLATE_FRAMES: [[&str; 9]; 6] = [
     ["", "a1", "a2", "a3", "a4", "a5", "a6", "", "a7"],

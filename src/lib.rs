@@ -1,9 +1,4 @@
-mod back;
-mod chest;
-mod directives;
-mod hat;
-mod pants;
-mod template;
+mod outfit;
 mod utils;
 
 use crate::utils::image::read_image;
@@ -13,17 +8,9 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
 
     exports.set(
-        "get_image_size",
-        lua.create_function(|_, userdata: LuaAnyUserData| {
-            read_image(userdata);
-            Ok(())
-        })?,
-    )?;
-
-    exports.set(
         "generate_pants",
         lua.create_function(|_, (userdata, hide_body): (LuaAnyUserData, bool)| {
-            let res = pants::generate_pants(*read_image(userdata), hide_body);
+            let res = outfit::pants::generate_pants(*read_image(userdata), hide_body);
             Ok(res)
         })?,
     )?;
@@ -37,7 +24,7 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
                 LuaAnyUserData,
                 LuaAnyUserData,
             )| {
-                let res = chest::generate_chest(
+                let res = outfit::chest::generate_chest(
                     *read_image(torso_userdata),
                     *read_image(front_sleeve_userdata),
                     *read_image(back_sleeve_userdata),
@@ -50,7 +37,7 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     exports.set(
         "generate_back",
         lua.create_function(|_, userdata: LuaAnyUserData| {
-            let res = back::generate_back(*read_image(userdata));
+            let res = outfit::back::generate_back(*read_image(userdata));
             Ok(res)
         })?,
     )?;
@@ -58,7 +45,7 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     exports.set(
         "generate_hat",
         lua.create_function(|_, userdata: LuaAnyUserData| {
-            let res = hat::generate_hat(*read_image(userdata));
+            let res = outfit::hat::generate_hat(*read_image(userdata));
             Ok(res)
         })?,
     )?;

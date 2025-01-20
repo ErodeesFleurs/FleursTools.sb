@@ -1,7 +1,6 @@
-use crate::directives;
+use crate::utils::directives;
 use crate::utils::image::{self, Image};
-
-use crate::template::create;
+use crate::utils::template::create;
 
 const CHEST_TEMPLATE_FRAMES: [[&str; 2]; 6] = [
     ["", "f3"],

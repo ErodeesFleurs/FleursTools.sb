@@ -11,6 +11,10 @@ pub struct Image {
     format: PixelFormat,
 }
 
+pub struct ImageParseOptions {
+    pub skip_transparent: bool,
+}
+
 #[allow(dead_code)]
 #[repr(u8)]
 #[derive(Debug, Copy, Clone)]
@@ -81,10 +85,6 @@ pub fn read_image(userdata: AnyUserData) -> &'static Image {
         img = &*raw_ptr;
     }
     img
-}
-
-pub struct ImageParseOptions {
-    pub skip_transparent: bool,
 }
 
 pub fn to_color_table(img: &Image, options: ImageParseOptions) -> Vec<Vec<String>> {
