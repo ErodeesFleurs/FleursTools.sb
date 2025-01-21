@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 mlua = { version = "0.10.2", features = ["lua53", "vendored"] }
 
 [profile.release]
-lto = true
-strip = true
-panic = "abort"
+lto = false
+strip = false
+# panic = "abort"

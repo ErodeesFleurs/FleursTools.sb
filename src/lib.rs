@@ -1,3 +1,4 @@
+mod extra;
 mod outfit;
 mod utils;
 
@@ -5,28 +6,15 @@ use mlua::prelude::*;
 
 fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
-    let outfit = lua.create_table()?;
-    outfit.set(
-        "generate_pants",
-        lua.create_function(outfit::pants::lua_generate)?,
-    )?;
 
-    outfit.set(
-        "generate_chest",
-        lua.create_function(outfit::chest::lua_generate)?,
-    )?;
-
-    outfit.set(
-        "generate_back",
-        lua.create_function(outfit::back::lua_generate)?,
-    )?;
-
-    outfit.set(
-        "generate_hat",
-        lua.create_function(outfit::hat::lua_generate)?,
-    )?;
+    let outfit = outfit::register(lua)?;
     exports.set("outfit", outfit)?;
 
+    let structure = extra::register_structure(lua)?;
+    exports.set("structure", structure)?;
+
+    let functional = extra::register_functional(lua)?;
+    exports.set("functional", functional)?;
     Ok(exports)
 }
 
