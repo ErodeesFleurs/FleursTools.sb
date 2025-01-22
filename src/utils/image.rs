@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use mlua::AnyUserData;
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct Image {
@@ -78,7 +76,7 @@ impl Image {
     }
 }
 
-pub fn read_image(userdata: AnyUserData) -> Image {
+pub fn read_image(userdata: mlua::AnyUserData) -> Image {
     let img: &Image;
     unsafe {
         let raw_ptr = userdata.to_pointer() as *const Image;

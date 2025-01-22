@@ -11,30 +11,13 @@ pub fn range(
     _: &mlua::Lua,
     (start, stop, step): (Option<i64>, Option<i64>, Option<i64>),
 ) -> mlua::Result<array::Array> {
-    let start = start.unwrap_or(1);
-    let stop = stop.ok_or_else(|| mlua::Error::RuntimeError("`stop` is required".into()))?;
+    let start = start.unwrap();
+    let stop = stop.unwrap();
     let step = step.unwrap_or(1);
-
-    if step == 0 {
-        return Err(mlua::Error::RuntimeError("`step` cannot be zero".into()));
-    }
-
-    // 生成序列
-    let mut data = Vec::new();
-    let mut current = start;
-
-    if step > 0 {
-        while current <= stop {
-            data.push(mlua::Value::Integer(current));
-            current += step;
-        }
-    } else {
-        while current >= stop {
-            data.push(mlua::Value::Integer(current));
-            current += step;
-        }
-    }
-
+    let data = (start..stop)
+        .step_by(step as usize)
+        .map(mlua::Value::Integer)
+        .collect();
     Ok(array::Array::new(data))
 }
 
@@ -42,8 +25,8 @@ pub fn map(
     _: &mlua::Lua,
     (func, array): (mlua::Function, array::Array),
 ) -> mlua::Result<array::Array> {
-    let data = array.map(func)?;
-    Ok(array::Array::new(data))
+    let new_array = array.map(func)?;
+    Ok(new_array)
 }
 
 pub fn chain(

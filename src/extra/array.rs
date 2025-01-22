@@ -17,27 +17,28 @@ impl Array {
         Ok(Self::new(data))
     }
 
-    pub fn map(&self, func: mlua::Function) -> mlua::Result<Vec<mlua::Value>> {
+    pub fn map(&self, func: mlua::Function) -> mlua::Result<Array> {
         let new_data = self
             .data
             .iter()
             .map(|v| func.call(v.clone()))
             .collect::<mlua::Result<Vec<mlua::Value>>>()?;
-        Ok(new_data)
+        Ok(Array::new(new_data))
     }
 
-    pub fn flatten(&self) -> Vec<mlua::Value> {
-        let mut data = Vec::new();
+    pub fn flatten(&self, level: usize) -> mlua::Result<Array> {
+        let mut new_data: Vec<mlua::Value> = Vec::new();
         for v in &self.data {
             match v {
-                mlua::Value::Table(table) => {
-                    let array = Array::from_lua_table(table.clone()).unwrap();
-                    data.extend(array.flatten());
+                mlua::Value::Table(table) if level > 0 => {
+                    let array = Array::from_lua_table(table.clone())?;
+                    let flattened = array.flatten(level - 1)?;
+                    new_data.extend(flattened.data);
                 }
-                _ => data.push(v.clone()),
+                _ => new_data.push(v.clone()),
             }
         }
-        data
+        Ok(Array::new(new_data))
     }
 }
 
@@ -61,8 +62,8 @@ impl mlua::UserData for Array {
         methods.add_method("len", |_, this, _: ()| Ok(this.data.len()));
 
         methods.add_method("map", |_, this, func: mlua::Function| {
-            let new_data = this.map(func)?;
-            Ok(Array::new(new_data))
+            let new_array = this.map(func)?;
+            Ok(new_array)
         });
 
         methods.add_method("filter", |_, this, func: mlua::Function| {
@@ -100,9 +101,9 @@ impl mlua::UserData for Array {
             Ok(Array::new(data))
         });
 
-        methods.add_method("flatten", |_, this, ()| {
-            let new_data = this.flatten().clone();
-            Ok(Array::new(new_data))
+        methods.add_method("flatten", |_, this, level: usize| {
+            let new_array = this.flatten(level);
+            Ok(new_array)
         });
 
         methods.add_method("to_table", |lua, this, ()| {
@@ -139,6 +140,22 @@ impl mlua::UserData for Array {
             } else {
                 Err(mlua::Error::external("Index out of bounds"))
             }
+        });
+
+        methods.add_meta_method(mlua::MetaMethod::Concat, |_, this, other: mlua::Value| {
+            let mut data = this.data.clone();
+            match other {
+                mlua::Value::Table(table) => {
+                    let array = Array::from_lua_table(table)?;
+                    data.extend(array.data);
+                }
+                mlua::Value::UserData(ud) => {
+                    let array = ud.borrow::<Array>()?;
+                    data.extend(array.data.clone());
+                }
+                _ => return Err(mlua::Error::external("Expected table or array")),
+            }
+            Ok(Array::new(data))
         });
 
         methods.add_meta_method_mut(
