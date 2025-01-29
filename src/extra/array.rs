@@ -26,15 +26,25 @@ impl Array {
         Ok(Array::new(new_data))
     }
 
-    pub fn flatten(&self, level: usize) -> mlua::Result<Array> {
+    pub fn flatten(&self, level: Option<usize>) -> mlua::Result<Array> {
+        let level = level.unwrap_or(1);
         let mut new_data: Vec<mlua::Value> = Vec::new();
         for v in &self.data {
             match v {
                 mlua::Value::Table(table) if level > 0 => {
                     let array = Array::from_lua_table(table.clone())?;
-                    let flattened = array.flatten(level - 1)?;
+                    let flattened = array.flatten(Some(level - 1))?;
                     new_data.extend(flattened.data);
                 }
+                mlua::Value::UserData(ud) =>{
+                    if ud.borrow::<Array>().is_ok() {
+                        let array = ud.borrow::<Array>()?;
+                        let flattened = array.flatten(Some(level - 1))?;
+                        new_data.extend(flattened.data);
+                    } else {
+                        new_data.push(v.clone());
+                    }
+                },
                 _ => new_data.push(v.clone()),
             }
         }
@@ -101,7 +111,7 @@ impl mlua::UserData for Array {
             Ok(Array::new(data))
         });
 
-        methods.add_method("flatten", |_, this, level: usize| {
+        methods.add_method("flatten", |_, this, level: Option<usize>| {
             let new_array = this.flatten(level);
             Ok(new_array)
         });
