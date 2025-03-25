@@ -3,7 +3,7 @@ pub mod chest;
 pub mod hat;
 pub mod pants;
 
-pub fn register(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let outfit = lua.create_table()?;
 
     let generate_pants = lua.create_function(pants::lua_generate)?;

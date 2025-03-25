@@ -10,7 +10,7 @@ pub fn register_structure(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     Ok(structure)
 }
 
-pub fn register_functional(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let functional = lua.create_table()?;
     let bind = lua.create_function(functional::bind)?;
     functional.set("bind", bind)?;
