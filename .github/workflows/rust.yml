@@ -44,7 +44,7 @@ jobs:
       - name: Package Binary
         run: |
           mkdir -p dist
-          cp target/release/libtest_code.so dist/libtest_code.so
+          cp target/release/libfleurs_tools.so dist/libfleurs_tools.so
           zip -r linux-package.zip dist/
 
       - name: Upload Artifact
@@ -88,7 +88,7 @@ jobs:
       - name: Package Binary
         run: |
           mkdir dist
-          copy target\release\test_code.dll dist\test_code.dll
+          copy target\release\fleurs_tools.dll dist\fleurs_tools.dll
           powershell Compress-Archive -Path dist\* -DestinationPath windows-package.zip
 
       - name: Upload Artifact

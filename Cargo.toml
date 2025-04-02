@@ -1,19 +1,15 @@
 [package]
-name = "test_code"
-version = "0.1.0"
-edition = "2021"
+name = "fleurs_tools"
+version = "0.2.0"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 mlua = { version = "0.10.3", features = ["lua53", "vendored"] }
-egui = "0.31.1"
-sdl2 = { version = "0.37.0", features = ["bundled", "static-link"]}
-gl = { version = "0.14.0" }
-egui_sdl2_gl = "0.31.0"
 
 [profile.release]
 lto = false
 strip = false
-# panic = "abort"
+panic = "abort"

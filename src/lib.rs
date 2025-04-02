@@ -1,7 +1,6 @@
 mod extra;
 mod outfit;
 mod utils;
-mod egui;
 
 use mlua::prelude::*;
 
@@ -16,9 +15,6 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
 
     let functional = extra::register_function(lua)?;
     exports.set("functional", functional)?;
-    
-    let egui = egui::register_function(lua)?;
-    exports.set("egui", egui)?;
     
     Ok(exports)
 }
