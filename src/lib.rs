@@ -1,5 +1,5 @@
 mod extra;
-mod outfit;
+mod directives;
 mod utils;
 
 use mlua::prelude::*;
@@ -7,8 +7,8 @@ use mlua::prelude::*;
 fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let exports = lua.create_table()?;
 
-    let outfit = outfit::register_function(lua)?;
-    exports.set("outfit", outfit)?;
+    let directive = directives::register_function(lua)?;
+    exports.set("directive", directive)?;
 
     let structure = extra::register_structure(lua)?;
     exports.set("structure", structure)?;
@@ -19,7 +19,7 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     Ok(exports)
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn fleurs_module(state: *mut mlua::lua_State) -> ::std::os::raw::c_int {
-    mlua::Lua::entrypoint1(state, move |lua| lua_module(lua))
+#[unsafe(no_mangle)]
+pub extern "C" fn fleurs_module(state: *mut mlua::lua_State) -> ::std::os::raw::c_int {
+    unsafe { mlua::Lua::entrypoint1(state, move |lua| lua_module(lua)) }
 }
