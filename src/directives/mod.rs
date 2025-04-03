@@ -2,6 +2,7 @@ pub mod back;
 pub mod chest;
 pub mod hat;
 pub mod pants;
+pub mod normal;
 
 pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let outfit = lua.create_table()?;
