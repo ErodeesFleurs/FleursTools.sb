@@ -8,6 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 mlua = { version = "0.10.3", features = ["lua53", "vendored"] }
+byteorder = "1.5.0"
 anyhow = "1.0.97"
 json = "0.12.4"
 

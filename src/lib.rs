@@ -18,6 +18,9 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     let functional = extra::register_function(lua)?;
     exports.set("functional", functional)?;
     
+    let asset = asset::register_asset(lua)?;
+    exports.set("asset", asset)?;
+
     Ok(exports)
 }
 
