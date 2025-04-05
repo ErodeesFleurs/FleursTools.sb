@@ -2,13 +2,11 @@ use std::collections::HashMap;
 use std::io::{Seek, SeekFrom};
 
 use byteorder::{BigEndian, ReadBytesExt};
-use mlua::UserData;
 
-use crate::stream::SBType;
-use crate::stream::reader::SBReader;
-
+use super::SBType;
 use super::AssetReader;
 use super::file::AssetFile;
+use super::reader::SBReader;
 
 const ASSET_HEADER: [u8; 8] = *b"SBAsset6";
 const INDEX_HEADER: [u8; 5] = *b"INDEX";
@@ -92,36 +90,4 @@ where R: SBReader + Seek
     fn meta(&self, key: String) -> anyhow::Result<SBType> {
         Ok(self.metadata[&key].clone())
     }
-}
-
-impl<R> UserData for PacketReader<R>
-where R: SBReader + Seek
-{
-    fn add_fields<F: mlua::UserDataFields<Self>>(_: &mut F) {}
-    
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("exist", |_, this, path: String| {
-            Ok(this.exist(&path))
-        });
-
-        methods.add_method_mut("file", |_, this, path: String| {
-            this.file(&path).map_err(|e| mlua::Error::external(e))
-        });
-
-        methods.add_method("paths", |_, this, _: ()|{
-            let mut v = Vec::new();
-            for item in this.paths() {
-                v.push((*item).clone());
-            }
-            Ok(v)
-        });
-
-        methods.add_method("meta", |_, this, key: String|{
-            Ok(this.meta(key).map_err(|e| mlua::Error::external(e))?)
-        });
-    }
-}
-
-pub fn create_packet_reader<R: SBReader + Seek>(input: R) -> mlua::Result<PacketReader<R>> {
-    PacketReader::new(input).map_err(|e| mlua::Error::external(e))
 }

@@ -2,7 +2,6 @@ mod asset;
 mod extra;
 mod directives;
 mod utils;
-mod stream;
 
 use mlua::prelude::*;
 

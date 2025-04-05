@@ -6,6 +6,7 @@ use byteorder::{BigEndian, WriteBytesExt};
 use super::SBType;
 use super::vlq::{VLQi64, VLQu64};
 
+#[allow(unused)]
 pub trait SBWriter: Write {
     fn write_vlq_u64(&mut self, value: u64) -> anyhow::Result<()> {
         let mut buffer = Vec::new();
