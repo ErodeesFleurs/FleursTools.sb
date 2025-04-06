@@ -53,6 +53,8 @@ impl DirectoryReader {
 
             if entry.file_type()?.is_dir() {
                 output.extend(self.scan_all(&format!("{}/", asset_path))?);
+            } else {
+                output.insert(asset_path.clone());
             }
         }
 
