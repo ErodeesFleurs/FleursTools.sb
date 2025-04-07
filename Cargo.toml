@@ -15,4 +15,4 @@ json = "0.12.4"
 [profile.release]
 lto = false
 strip = false
-panic = "abort"
+# panic = "abort"

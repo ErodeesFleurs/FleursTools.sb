@@ -65,8 +65,7 @@ impl DirectoryReader {
 impl AssetReader for DirectoryReader {
     fn exist(&self, path: &str) -> bool {
         if path.starts_with('/') {
-            let relative_path = path.trim_start_matches('/');
-            self.assets_paths.contains(relative_path)
+            self.assets_paths.contains(path)
         } else {
             false
         }
@@ -76,9 +75,10 @@ impl AssetReader for DirectoryReader {
         if !self.exist(path) {
             anyhow::bail!("File is not exist")
         }
+        
         let path = path.to_string();
         let file_path = self.to_filesystem(&path)?;
-
+        
         let bytes = fs::read(file_path)?;
 
         Ok(super::file::AssetFile { path, bytes })
