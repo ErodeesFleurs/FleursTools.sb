@@ -2,6 +2,7 @@ mod asset;
 mod extra;
 mod directives;
 mod utils;
+mod hook;
 
 use mlua::prelude::*;
 
@@ -19,6 +20,9 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
     
     let asset = asset::register_asset(lua)?;
     exports.set("asset", asset)?;
+
+    let hook = hook::register_function(lua)?;
+    exports.set("hook", hook)?;
 
     Ok(exports)
 }

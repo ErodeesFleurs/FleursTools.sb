@@ -12,6 +12,13 @@ byteorder = "1.5.0"
 anyhow = "1.0.97"
 json = "0.12.4"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+pdb = "0.8.0"
+
+# Linux 平台特定依赖项
+[target.'cfg(target_os = "linux")'.dependencies]
+goblin = "0.9.3"
+
 [profile.release]
 lto = false
 strip = false
