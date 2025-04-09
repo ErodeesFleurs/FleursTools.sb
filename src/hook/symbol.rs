@@ -110,13 +110,13 @@ mod windows {
             match symbol.parse()? {
                 SymbolData::Public(data) => {
                     symbols.insert(
-                        demangle_msvc_function_name(data.name.to_string().into_owned()),
+                        demangle_msvc_function_name(&data.name.to_string().into_owned()),
                         data.offset.offset as u64,
                     );
                 }
                 SymbolData::Procedure(data) => {
                     symbols.insert(
-                        demangle_msvc_function_name(data.name.to_string().into_owned()),
+                        demangle_msvc_function_name(&data.name.to_string().into_owned()),
                         data.offset.offset as u64,
                     );
                 }
