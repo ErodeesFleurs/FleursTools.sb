@@ -137,12 +137,12 @@ mod windows {
         while let Some(symbol) = symbol_table.iter().next()? {
             match symbol.parse()? {
                 SymbolData::Public(data) => {
-                    if data.name == name {
+                    if data.name.to_string().into_owned() == name.to_string() {
                         return Ok(data.offset.offset as u64);
                     }
                 }
                 SymbolData::Procedure(data) => {
-                    if data.name == name {
+                    if data.name.to_string().into_owned() == name.to_string() {
                         return Ok(data.offset.offset as u64);
                     }
                 }
