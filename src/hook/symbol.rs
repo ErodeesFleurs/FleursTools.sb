@@ -135,3 +135,9 @@ pub fn platform_base_addr(name: &str) -> anyhow::Result<u64> {
 pub fn platform_base_addr(_: &str) -> anyhow::Result<u64> {
     windows::base_addr()
 }
+
+
+#[cfg(target_os = "windows")]
+pub fn open_pdb(path: &str) -> anyhow::Result<bool> {
+    windows::open_pdb(path)
+}
