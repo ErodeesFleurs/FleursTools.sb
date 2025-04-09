@@ -97,7 +97,6 @@ dependencies = [
  "cpp_demangle",
  "goblin",
  "json",
- "libc",
  "mlua",
  "pdb",
  "retour",

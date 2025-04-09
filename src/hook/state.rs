@@ -1,5 +1,3 @@
-use libc::{mprotect, sysconf, _SC_PAGESIZE, PROT_READ, PROT_WRITE, PROT_EXEC};
-
 use std::ffi::c_void;
 
 use retour::static_detour;
@@ -13,15 +11,6 @@ static_detour! {
     static AddChatMessageHook: extern "C" fn(*mut c_void, *const c_void, *const c_void);
 }
 
-fn make_page_writable(addr: *mut c_void) {
-    let page_size = unsafe { sysconf(_SC_PAGESIZE) } as usize;
-    let page_start = (addr as usize) & !(page_size - 1);
-    let ret = unsafe { mprotect(page_start as *mut _, page_size, PROT_READ | PROT_WRITE | PROT_EXEC) };
-    if ret != 0 {
-        println!("mprotect failed: {}", std::io::Error::last_os_error());
-    }
-}
-
 pub fn hook_func(addr: u64, name: &str) -> anyhow::Result<bool> {
     println!(
         "target addr: {:#x}, base addr: {:#x}",
@@ -32,7 +21,7 @@ pub fn hook_func(addr: u64, name: &str) -> anyhow::Result<bool> {
 
     unsafe {
         println!("Making page writable for address: {:#x}", addr);
-        make_page_writable(addr as *mut c_void);
+        // make_page_writable(addr as *mut c_void);
         println!("Hooking function at address: {:#x}", addr);
         AddChatMessageHook.initialize(
             std::mem::transmute::<u64, AddChatMessageFn>(addr),

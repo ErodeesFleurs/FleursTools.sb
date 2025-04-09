@@ -99,7 +99,7 @@ mod windows {
         if handle.is_null() {
             anyhow::bail!("Failed to get module handle");
         } else {
-            Ok(handle as usize)
+            Ok(handle as u64) // Cast to u64 instead of usize
         }
     }
 }
