@@ -2,6 +2,10 @@
   description = "A Nix-flake-based Node.js development environment";
 
   inputs = {
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
@@ -9,6 +13,7 @@
     {
       self,
       nixpkgs,
+      rust-overlay,
       ...
     }:
     let
@@ -17,16 +22,18 @@
     {
       devShells."${system}".default =
         let
+          overlays = [ (import rust-overlay) ];
           pkgs = import nixpkgs {
-            inherit system;
+            inherit system overlays;
           };
         in
         pkgs.mkShell {
           packages = with pkgs; [
-            cargo
-            rust-analyzer
-            rustc
-            rustfmt
+            # cargo
+            # rust-analyzer
+            # rustc
+            # rustfmt
+            rust-bin.nightly.latest.default
           ];
           RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
           shellHook = ''
