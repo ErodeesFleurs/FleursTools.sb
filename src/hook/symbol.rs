@@ -82,6 +82,26 @@ mod windows {
 
         let mut symbols = HashMap::new();
 
+        // while let Some(symbol) = symbol_table.iter().next()? {
+        //     match symbol.parse()? {
+        //         SymbolData::Public(data) => {
+        //             symbols.insert(
+        //                 data.name.to_string().into_owned(),
+        //                 data.offset.offset as u64,
+        //             );
+        //         }
+        //         SymbolData::Procedure(data) => {
+        //             symbols.insert(
+        //                 data.name.to_string().into_owned(),
+        //                 data.offset.offset as u64,
+        //             );
+        //         }
+        //         _ => {}
+        //     }
+        // }
+
+        // 返回前20个函数
+        let mut count = 0;
         while let Some(symbol) = symbol_table.iter().next()? {
             match symbol.parse()? {
                 SymbolData::Public(data) => {
@@ -98,9 +118,39 @@ mod windows {
                 }
                 _ => {}
             }
+            count += 1;
+            if count >= 20 {
+                break;
+            }
         }
 
         Ok(symbols)
+    }
+
+    pub fn symbol_addr(name: &str) -> anyhow::Result<u64> {
+        let file = fs::File::open(name)?;
+
+        let mut pdb = pdb::PDB::open(file)?;
+
+        let symbol_table = pdb.global_symbols()?;
+
+        while let Some(symbol) = symbol_table.iter().next()? {
+            match symbol.parse()? {
+                SymbolData::Public(data) => {
+                    if data.name == name {
+                        return Ok(data.offset.offset as u64);
+                    }
+                }
+                SymbolData::Procedure(data) => {
+                    if data.name == name {
+                        return Ok(data.offset.offset as u64);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        anyhow::bail!("Symbol {} not found", name)
     }
 
     pub fn base_addr() -> anyhow::Result<u64> {
