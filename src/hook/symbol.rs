@@ -70,7 +70,7 @@ mod windows {
 
         let symbol_table = pdb.global_symbols()?;
 
-        return true;
+        return Ok(true);
     }
 
     pub fn parse_symbols(path: &str) -> anyhow::Result<HashMap<String, u64>> {
