@@ -1,4 +1,8 @@
 use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+
+static GLOBAL_SYMBOLS: LazyLock<Mutex<HashMap<String, u64>>> =
+    LazyLock::new(|| HashMap::new().into());
 
 #[cfg(target_os = "linux")]
 mod linux {
@@ -8,29 +12,35 @@ mod linux {
 
     use goblin::elf;
 
-    fn demangle_function_name(name: &str) -> String {
+    pub fn demangle_itanium_function_name(name: &str) -> String {
         cpp_demangle::Symbol::new(name)
             .map(|symbol| symbol.to_string())
             .unwrap_or_else(|_| name.to_string())
     }
 
     pub fn parse_symbols(_: &str) -> anyhow::Result<HashMap<String, u64>> {
+        let mut symbols_map = GLOBAL_SYMBOLS
+            .lock()
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+
+        if symbols_map.len() > 0 {
+            return Ok(symbols_map.clone());
+        }
+
         let buffer = fs::read("/proc/self/exe")?;
 
         let elf = elf::Elf::parse(&buffer)?;
 
-        let mut symbols_map = HashMap::new();
-
         for sym in elf.syms.iter() {
             if let Some(name) = elf.strtab.get_at(sym.st_name) {
                 if sym.is_function() {
-                    let name = demangle_function_name(name);
+                    let name = demangle_itanium_function_name(name);
                     symbols_map.insert(name.to_string(), sym.st_value);
                 }
             }
         }
 
-        Ok(symbols_map)
+        Ok(symbols_map.clone())
     }
 
     pub fn base_addr(name: &str) -> anyhow::Result<u64> {
@@ -63,14 +73,28 @@ mod windows {
 
     use winapi::um::libloaderapi::GetModuleHandleA;
 
-    pub fn open_pdb(path: &str) -> anyhow::Result<bool> {
-        let file = fs::File::open(path)?;
+    fn demangle_msvc_function_name(name: &str) -> String {
+        if !name.starts_with('?') {
+            return name.to_string();
+        }
 
-        let mut pdb = pdb::PDB::open(file)?;
+        let parts = name
+            .trim_start_matches('?')
+            .split('@')
+            .collect::<Vec<&str>>();
+        let function_name = parts.get(0).unwrap_or(&name);
 
-        let symbol_table = pdb.global_symbols()?;
+        let namespace = parts
+            .iter()
+            .skip(1)
+            .take_while(|&&s| s != "")
+            .map(|&s| s)
+            .collect::<Vec<&str>>()
+            .into_iter()
+            .rev()
+            .collect::<Vec<&str>>();
 
-        return Ok(true);
+        format!("{}::{}", namespace.join("::"), function_name)
     }
 
     pub fn parse_symbols(path: &str) -> anyhow::Result<HashMap<String, u64>> {
@@ -82,45 +106,21 @@ mod windows {
 
         let mut symbols = HashMap::new();
 
-        // while let Some(symbol) = symbol_table.iter().next()? {
-        //     match symbol.parse()? {
-        //         SymbolData::Public(data) => {
-        //             symbols.insert(
-        //                 data.name.to_string().into_owned(),
-        //                 data.offset.offset as u64,
-        //             );
-        //         }
-        //         SymbolData::Procedure(data) => {
-        //             symbols.insert(
-        //                 data.name.to_string().into_owned(),
-        //                 data.offset.offset as u64,
-        //             );
-        //         }
-        //         _ => {}
-        //     }
-        // }
-
-        // 返回前20个函数
-        let mut count = 0;
         while let Some(symbol) = symbol_table.iter().next()? {
             match symbol.parse()? {
                 SymbolData::Public(data) => {
                     symbols.insert(
-                        data.name.to_string().into_owned(),
+                        demangle_msvc_function_name(data.name.to_string().into_owned()),
                         data.offset.offset as u64,
                     );
                 }
                 SymbolData::Procedure(data) => {
                     symbols.insert(
-                        data.name.to_string().into_owned(),
+                        demangle_msvc_function_name(data.name.to_string().into_owned()),
                         data.offset.offset as u64,
                     );
                 }
                 _ => {}
-            }
-            count += 1;
-            if count >= 20 {
-                break;
             }
         }
 
@@ -186,8 +186,15 @@ pub fn platform_base_addr(_: &str) -> anyhow::Result<u64> {
     windows::base_addr()
 }
 
-
-#[cfg(target_os = "windows")]
-pub fn open_pdb(path: &str) -> anyhow::Result<bool> {
-    windows::open_pdb(path)
+pub fn symbol_addr(name: &str) -> anyhow::Result<Option<u64>> {
+    let symbols_map = GLOBAL_SYMBOLS
+        .lock()
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    Ok(symbols_map.iter().find_map(|(k, &v)| {
+        if k.starts_with(name) {
+            Some(v)
+        } else {
+            None
+        }
+    }))
 }
