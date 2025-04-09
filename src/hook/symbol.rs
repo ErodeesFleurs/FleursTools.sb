@@ -63,6 +63,16 @@ mod windows {
 
     use winapi::um::libloaderapi::GetModuleHandleA;
 
+    pub fn open_pdb(path: &str) -> anyhow::Result<bool> {
+        let file = fs::File::open(path)?;
+
+        let mut pdb = pdb::PDB::open(file)?;
+
+        let symbol_table = pdb.global_symbols()?;
+
+        return true;
+    }
+
     pub fn parse_symbols(path: &str) -> anyhow::Result<HashMap<String, u64>> {
         let file = fs::File::open(path)?;
 

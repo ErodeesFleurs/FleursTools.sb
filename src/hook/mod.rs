@@ -21,5 +21,13 @@ pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     })?;
     hook.set("test_hook", test_hook)?;
 
+    #[cfg(target_os = "windows")]
+    let open_pdb = lua.create_function(|_, path: String| -> mlua::Result<bool> {
+        let result = symbol::open_pdb(&path);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    #[cfg(target_os = "windows")]
+    hook.set("open_pdb", open_pdb)?;
+
     Ok(hook)
 }
