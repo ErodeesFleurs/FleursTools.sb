@@ -117,31 +117,18 @@ mod windows {
 
         debug!("Parsing symbols from PDB file");
 
-        let mut count = 0;
+        let mut symbols = symbol_table.iter();
 
-        while let Some(symbol) = symbol_table.iter().next()? {
-            match symbol.parse()? {
-                SymbolData::Public(data) => {
-                    symbols_map.insert(
-                        demangle_msvc_function_name(&data.name.to_string().into_owned()),
-                        data.offset.offset as u64,
-                    );
-                }
-                SymbolData::Procedure(data) => {
-                    symbols_map.insert(
-                        demangle_msvc_function_name(&data.name.to_string().into_owned()),
-                        data.offset.offset as u64,
-                    );
-                }
-                _ => {}
-            }
-            count += 1;
-            if count % 100 == 0 {
-                debug!("Parsed {} symbols", count);
+        while let Some(symbol) = symbols.next().unwrap() {
+            if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
+                let name = data.name.to_string().into_owned();
+                let name = demangle_msvc_function_name(&name);
+                let offset = data.offset.offset as u64;
+                symbols_map.insert(name, offset);
             }
         }
 
-        debug!("Parsed {} symbols", symbols_map.len());
+        debug!("Parsed {} function symbols", symbols_map.len());
 
         Ok(symbols_map.clone())
     }
@@ -209,11 +196,36 @@ pub fn symbol_addr(name: &str) -> anyhow::Result<Option<u64>> {
     let symbols_map = GLOBAL_SYMBOLS
         .lock()
         .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    Ok(symbols_map.iter().find_map(|(k, &v)| {
-        if k.starts_with(name) {
-            Some(v)
-        } else {
-            None
+    Ok(symbols_map
+        .iter()
+        .find_map(|(k, &v)| if k.starts_with(name) { Some(v) } else { None }))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+
+    use pdb::FallibleIterator;
+    use tklog::debug;
+
+    use crate::log;
+
+    #[test]
+    fn test_read_pdb() {
+        log::log_init();
+        let path = "/media/next/SteamLibrary/steamapps/common/Starbound/win64/starbound.pdb";
+        let file = File::open(path).unwrap();
+        let mut pdb = pdb::PDB::open(file).unwrap();
+        let symbol_table = pdb.global_symbols().unwrap();
+
+        let mut symbols = symbol_table.iter();
+
+        while let Some(symbol) = symbols.next().unwrap() {
+            if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
+                let name = data.name.to_string().into_owned();
+                // 输出符号名 + RVA（相对虚拟地址）
+                debug!("Symbol: {} RVA: {:#x}", name, data.offset.offset);
+            }
         }
-    }))
+    }
 }
