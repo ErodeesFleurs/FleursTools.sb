@@ -81,10 +81,10 @@ mod windows {
 
     use std::{fs, ffi};
 
-    use pdb::{FallibleIterator, SymbolData};
+    use pdb::FallibleIterator;
 
     use tklog::{debug, handle};
-    use winapi::um::libloaderapi::GetModuleHandleA;
+    use winapi::um::libloaderapi::{GetModuleHandleA, GetProcAddress};
 
     fn demangle_msvc_function_name(name: &str) -> String {
         if !name.starts_with('?') {
