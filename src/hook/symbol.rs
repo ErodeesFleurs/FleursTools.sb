@@ -117,6 +117,8 @@ mod windows {
 
         debug!("Parsing symbols from PDB file");
 
+        let mut count = 0;
+
         while let Some(symbol) = symbol_table.iter().next()? {
             match symbol.parse()? {
                 SymbolData::Public(data) => {
@@ -132,6 +134,10 @@ mod windows {
                     );
                 }
                 _ => {}
+            }
+            count += 1;
+            if count % 100 == 0 {
+                debug!("Parsed {} symbols", count);
             }
         }
 
