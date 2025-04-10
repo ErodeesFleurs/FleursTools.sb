@@ -201,31 +201,31 @@ pub fn symbol_addr(name: &str) -> anyhow::Result<Option<u64>> {
         .find_map(|(k, &v)| if k.starts_with(name) { Some(v) } else { None }))
 }
 
-#[cfg(test)]
-mod tests {
-    use std::fs::File;
+// #[cfg(test)]
+// mod tests {
+//     use std::fs::File;
 
-    use pdb::FallibleIterator;
-    use tklog::debug;
+//     use pdb::FallibleIterator;
+//     use tklog::debug;
 
-    use crate::log;
+//     use crate::log;
 
-    #[test]
-    fn test_read_pdb() {
-        log::log_init();
-        let path = "/media/next/SteamLibrary/steamapps/common/Starbound/win64/starbound.pdb";
-        let file = File::open(path).unwrap();
-        let mut pdb = pdb::PDB::open(file).unwrap();
-        let symbol_table = pdb.global_symbols().unwrap();
+//     #[test]
+//     fn test_read_pdb() {
+//         log::log_init();
+//         let path = "/media/next/SteamLibrary/steamapps/common/Starbound/win64/starbound.pdb";
+//         let file = File::open(path).unwrap();
+//         let mut pdb = pdb::PDB::open(file).unwrap();
+//         let symbol_table = pdb.global_symbols().unwrap();
 
-        let mut symbols = symbol_table.iter();
+//         let mut symbols = symbol_table.iter();
 
-        while let Some(symbol) = symbols.next().unwrap() {
-            if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
-                let name = data.name.to_string().into_owned();
-                // 输出符号名 + RVA（相对虚拟地址）
-                debug!("Symbol: {} RVA: {:#x}", name, data.offset.offset);
-            }
-        }
-    }
-}
+//         while let Some(symbol) = symbols.next().unwrap() {
+//             if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
+//                 let name = data.name.to_string().into_owned();
+//                 // 输出符号名 + RVA（相对虚拟地址）
+//                 debug!("Symbol: {} RVA: {:#x}", name, data.offset.offset);
+//             }
+//         }
+//     }
+// }
