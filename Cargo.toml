@@ -7,11 +7,15 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
+sdl2-sys = { version = "0.37.0", features = ["static-link", "bundled"] }
 mlua = { version = "0.10.3", features = ["lua53", "vendored"] }
-retour = { version = "0.3.1", features = ["static-detour"] }
+retour = { version = "0.4.0-alpha.3", features = ["static-detour"] }
+egui_glow = "0.31.1"
 byteorder = "1.5.0"
 anyhow = "1.0.97"
 tklog = "0.2.9"
+egui = "0.31.1"
+glow = "0.16.0"
 json = "0.12.4"
 
 [target.'cfg(target_os = "windows")'.dependencies]

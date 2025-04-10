@@ -29,6 +29,7 @@
         in
         pkgs.mkShell {
           packages = with pkgs; [
+            cmake
             # cargo
             # rust-analyzer
             # rustc

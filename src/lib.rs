@@ -21,7 +21,7 @@ fn lua_module(lua: &Lua) -> mlua::Result<LuaTable> {
     
     let asset = asset::register_asset(lua)?;
     exports.set("asset", asset)?;
-
+    
     let hook = hook::register_function(lua)?;
     exports.set("hook", hook)?;
 
