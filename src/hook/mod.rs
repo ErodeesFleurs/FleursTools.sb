@@ -1,6 +1,8 @@
 mod symbol;
 mod state;
 
+static PDB_PATH: &str = "./starbound.pdb";
+
 pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let hook = lua.create_table()?;
 
@@ -28,6 +30,18 @@ pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         addr.map_err(|e| mlua::Error::external(e))
     })?;
     hook.set("symbol_addr", symbol_addr)?;
+
+    let dynamic_symbol_addr = lua.create_function(|_, (module, name): (String, String)| -> mlua::Result<u64> {
+        let addr = symbol::platform_dynamic_symbol_addr(&module, &name);
+        addr.map_err(|e| mlua::Error::external(e))
+    })?;
+    hook.set("dynamic_symbol_addr", dynamic_symbol_addr)?;
     
     Ok(hook)
+}
+
+pub fn init() -> anyhow::Result<()> {
+    symbol::platform_parse_symbols(Some(PDB_PATH.to_string()))?;
+
+    Ok(())
 }

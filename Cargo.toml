@@ -13,15 +13,16 @@ byteorder = "1.5.0"
 anyhow = "1.0.97"
 tklog = "0.2.9"
 json = "0.12.4"
-pdb = "0.8.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
+pdb = "0.8.0"
 winapi = { version = "0.3.9", features = ["libloaderapi"] }
 
 # Linux 平台特定依赖项
 [target.'cfg(target_os = "linux")'.dependencies]
 cpp_demangle = "0.4.4"
 goblin = "0.9.3"
+libc = "0.2.171"
 
 [profile.release]
 lto = false

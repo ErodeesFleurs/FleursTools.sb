@@ -1,7 +1,7 @@
 use tklog::handle::FileSizeMode;
 use tklog::{LEVEL, LogOption};
 
-pub fn log_init() {
+pub fn init() {
     tklog::LOG.set_option(LogOption {
         level: Some(LEVEL::Debug), // 设置日志级别为 Debug
         console: Some(false),      // 禁用控制台输出

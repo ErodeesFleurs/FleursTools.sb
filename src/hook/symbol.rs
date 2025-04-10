@@ -8,7 +8,7 @@ static GLOBAL_SYMBOLS: LazyLock<Mutex<HashMap<String, u64>>> =
 mod linux {
     use super::*;
 
-    use std::fs;
+    use std::{fs, ffi};
 
     use goblin::elf;
 
@@ -61,17 +61,29 @@ mod linux {
         }
         anyhow::bail!("Base address not found for {}", name)
     }
+
+    pub fn dynamic_symbol_addr(_: &str, name: &str) -> anyhow::Result<u64> {
+        let c_name = ffi::CString::new(name).map_err(|_| anyhow::anyhow!("CString error"))?;
+
+        let addr = unsafe { libc::dlsym(libc::RTLD_DEFAULT, c_name.as_ptr()) };
+
+        if addr.is_null() {
+            anyhow::bail!("Symbol not found: {}", name);
+        } else {
+            Ok(addr as u64)
+        }
+    }
 }
 
 #[cfg(target_os = "windows")]
 mod windows {
     use super::*;
 
-    use std::fs;
+    use std::{fs, ffi};
 
     use pdb::{FallibleIterator, SymbolData};
 
-    use tklog::debug;
+    use tklog::{debug, handle};
     use winapi::um::libloaderapi::GetModuleHandleA;
 
     fn demangle_msvc_function_name(name: &str) -> String {
@@ -142,13 +154,36 @@ mod windows {
             Ok(handle as u64) // Cast to u64 instead of usize
         }
     }
+
+    pub fn dynamic_symbol_addr(module: &str, name: &str) -> anyhow::Result<u64> {
+        let c_name = ffi::CString::new(name).map_err(|_| anyhow::anyhow!("CString error"))?;
+        let c_module = ffi::CString::new(module).map_err(|_| anyhow::anyhow!("CString error"))?;
+
+        let handle = unsafe { GetModuleHandleA(c_module.as_ptr()) };
+
+        if handle.is_null() {
+            anyhow::bail!("Module not found: {}", module);
+        }
+
+        let addr = unsafe {
+            GetProcAddress(
+                handle,
+                c_name.as_ptr(),
+            )
+        };
+
+        if addr.is_null() {
+            anyhow::bail!("Symbol not found: {}", name);
+        } else {
+            Ok(addr as u64)
+        }
+    }
 }
 
 #[cfg(target_os = "linux")]
 pub fn platform_parse_symbols(_: Option<String>) -> anyhow::Result<HashMap<String, u64>> {
     linux::parse_symbols("")
 }
-
 #[cfg(target_os = "windows")]
 pub fn platform_parse_symbols(path: Option<String>) -> anyhow::Result<HashMap<String, u64>> {
     if let Some(pdb_path) = path {
@@ -165,6 +200,16 @@ pub fn platform_base_addr(name: &str) -> anyhow::Result<u64> {
 pub fn platform_base_addr(_: &str) -> anyhow::Result<u64> {
     windows::base_addr()
 }
+
+#[cfg(target_os = "linux")]
+pub fn platform_dynamic_symbol_addr(module: &str, name: &str) -> anyhow::Result<u64> {
+    linux::dynamic_symbol_addr(module, name)
+}
+#[cfg(target_os = "windows")]
+pub fn platform_dynamic_symbol_addr(module: &str, name: &str) -> anyhow::Result<u64> {
+    windows::dynamic_symbol_addr(module, name)
+}
+
 
 pub fn symbol_addr(name: &str) -> anyhow::Result<Option<u64>> {
     let symbols_map = GLOBAL_SYMBOLS
