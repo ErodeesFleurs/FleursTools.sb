@@ -110,7 +110,7 @@ mod windows {
         let file = fs::File::open(path)?;
 
         let mut pdb = pdb::PDB::open(file)?;
-
+    
         let symbol_table = pdb.global_symbols()?;
 
         let address_map = pdb.address_map()?;
@@ -121,12 +121,12 @@ mod windows {
             if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
                 let name = data.name.to_string().into_owned();
                 let name = demangle_msvc_function_name(&name);
-
+                
                 let Some(offset) = data.offset.to_rva(&address_map) else {
                     continue;
                 };
 
-                symbols_map.insert(name, offset);
+                symbols_map.insert(name, offset.0 as u64);
             }
         }
 
@@ -174,3 +174,38 @@ pub fn symbol_addr(name: &str) -> anyhow::Result<Option<u64>> {
         .iter()
         .find_map(|(k, &v)| if k.starts_with(name) { Some(v) } else { None }))
 }
+
+
+// #[cfg(test)]
+// mod tests {
+//     use std::fs::File;
+
+//     use pdb::FallibleIterator;
+//     use tklog::debug;
+
+//     use crate::log;
+
+//     #[test]
+//     fn test_read_pdb() {
+//         log::log_init();
+//         let path = "/media/next/SteamLibrary/steamapps/common/Starbound/win64/starbound.pdb";
+//         let file = File::open(path).unwrap();
+//         let mut pdb = pdb::PDB::open(file).unwrap();
+//         let symbol_table = pdb.global_symbols().unwrap();
+
+//         let address_map = pdb.address_map().unwrap();
+
+//         let mut symbols = symbol_table.iter();
+
+//         while let Some(symbol) = symbols.next().unwrap() {
+//             if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
+//                 let name = data.name.to_string().into_owned();
+//                 // 输出符号名 + RVA（相对虚拟地址）
+//                 let Some(rva) = data.offset.to_rva(&address_map) else {
+//                     continue;
+//                 };
+//                 debug!("Symbol: {} RVA: {:#x}", name, rva.0 as u64);
+//             }
+//         }
+//     }
+// }
