@@ -69,7 +69,6 @@ mod windows {
 
     use std::fs;
 
-    use goblin::pe::debug;
     use pdb::{FallibleIterator, SymbolData};
 
     use tklog::debug;
