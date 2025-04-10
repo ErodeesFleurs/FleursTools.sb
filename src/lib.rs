@@ -3,6 +3,7 @@ mod extra;
 mod directives;
 mod utils;
 mod hook;
+mod log;
 
 use mlua::prelude::*;
 
@@ -29,5 +30,6 @@ fn lua_module(lua: &Lua) -> LuaResult<LuaTable> {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn fleurs_module(state: *mut mlua::lua_State) -> ::std::os::raw::c_int {
+    log::log_init();
     unsafe { mlua::Lua::entrypoint1(state, move |lua| lua_module(lua)) }
 }

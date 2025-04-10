@@ -69,8 +69,10 @@ mod windows {
 
     use std::fs;
 
+    use goblin::pe::debug;
     use pdb::{FallibleIterator, SymbolData};
 
+    use tklog::debug;
     use winapi::um::libloaderapi::GetModuleHandleA;
 
     fn demangle_msvc_function_name(name: &str) -> String {
@@ -98,24 +100,34 @@ mod windows {
     }
 
     pub fn parse_symbols(path: &str) -> anyhow::Result<HashMap<String, u64>> {
+        let mut symbols_map = GLOBAL_SYMBOLS
+            .lock()
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+
+        if symbols_map.len() > 0 {
+            return Ok(symbols_map.clone());
+        }
+
         let file = fs::File::open(path)?;
 
         let mut pdb = pdb::PDB::open(file)?;
 
+        debug!("Parsing PDB file: {}", path);
+
         let symbol_table = pdb.global_symbols()?;
 
-        let mut symbols = HashMap::new();
+        debug!("Parsing symbols from PDB file");
 
         while let Some(symbol) = symbol_table.iter().next()? {
             match symbol.parse()? {
                 SymbolData::Public(data) => {
-                    symbols.insert(
+                    symbols_map.insert(
                         demangle_msvc_function_name(&data.name.to_string().into_owned()),
                         data.offset.offset as u64,
                     );
                 }
                 SymbolData::Procedure(data) => {
-                    symbols.insert(
+                    symbols_map.insert(
                         demangle_msvc_function_name(&data.name.to_string().into_owned()),
                         data.offset.offset as u64,
                     );
@@ -124,7 +136,9 @@ mod windows {
             }
         }
 
-        Ok(symbols)
+        debug!("Parsed {} symbols", symbols_map.len());
+
+        Ok(symbols_map.clone())
     }
 
     pub fn symbol_addr(name: &str) -> anyhow::Result<u64> {
