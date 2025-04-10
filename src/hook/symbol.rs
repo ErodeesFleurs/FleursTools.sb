@@ -110,8 +110,10 @@ mod windows {
         let file = fs::File::open(path)?;
 
         let mut pdb = pdb::PDB::open(file)?;
-    
+
         let symbol_table = pdb.global_symbols()?;
+
+        let address_map = pdb.address_map()?;
 
         let mut symbols = symbol_table.iter();
 
@@ -119,7 +121,11 @@ mod windows {
             if let pdb::SymbolData::Public(data) = symbol.parse().unwrap() {
                 let name = data.name.to_string().into_owned();
                 let name = demangle_msvc_function_name(&name);
-                let offset = data.offset.offset as u64;
+
+                let Some(offset) = data.offset.to_rva(&address_map) else {
+                    continue;
+                };
+
                 symbols_map.insert(name, offset);
             }
         }
