@@ -4,9 +4,16 @@ mod state;
 pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let hook = lua.create_table()?;
 
-    let init_symbols = lua.create_function(|_: &mlua::Lua, path: Option<String>|  -> mlua::Result<()> {
-        symbol::platform_parse_symbols(path).map_err(|e| mlua::Error::external(e))?;
-        Ok(())
+    let init_symbols = lua.create_function(|lua: &mlua::Lua, path: Option<String>|  -> mlua::Result<mlua::Table> {
+        let symbols = symbol::platform_parse_symbols(path).map_err(|e| mlua::Error::external(e))?;
+
+        let symbols_table = lua.create_table()?;
+        
+        for (name, addr) in symbols {
+            symbols_table.set(name, addr)?;
+        }
+        
+        Ok(symbols_table)
     })?; 
     hook.set("init_symbols", init_symbols)?;
 
