@@ -24,6 +24,12 @@ pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         result.map_err(|e| mlua::Error::external(e))
     })?;
     hook.set("test_hook", test_hook)?;
+    
+    let base_addr = lua.create_function(|_, name: String| -> mlua::Result<u64> {
+        let addr = symbol::platform_base_addr(&name);
+        addr.map_err(|e| mlua::Error::external(e))
+    })?;
+    hook.set("base_addr", base_addr)?; 
 
     let symbol_addr = lua.create_function(|_, name: String| -> mlua::Result<Option<u64>> {
         let addr = symbol::symbol_addr(&name);
