@@ -1,3 +1,5 @@
+#![feature(box_as_ptr)]
+
 mod asset;
 mod extra;
 mod directives;

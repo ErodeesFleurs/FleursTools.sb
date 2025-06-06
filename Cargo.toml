@@ -13,6 +13,7 @@ retour = { version = "0.4.0-alpha.3", features = ["static-detour"] }
 egui_glow = "0.31.1"
 byteorder = "1.5.0"
 anyhow = "1.0.97"
+libffi = "4.0.0"
 tklog = "0.2.9"
 egui = "0.31.1"
 glow = "0.16.0"

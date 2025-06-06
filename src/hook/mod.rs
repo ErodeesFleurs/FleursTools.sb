@@ -2,6 +2,7 @@ mod symbol;
 mod state;
 mod egui;
 mod sdl;
+mod call;
 
 static PDB_PATH: &str = "./starbound.pdb";
 
@@ -57,11 +58,17 @@ pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     })?;
     hook.set("sdl_poll_event_hook", sdl_poll_event_hook)?;    
 
-    let sdl_set_gl_get_proc_address = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
-        let result = sdl::set_gl_get_proc_address(addr);
+    let set_sdl_gl_get_proc_addr = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
+        let result = sdl::set_gl_get_proc_addr(addr);
         result.map_err(|e| mlua::Error::external(e))
     })?;
-    hook.set("sdl_set_gl_get_proc_address", sdl_set_gl_get_proc_address)?;
+    hook.set("set_sdl_gl_get_proc_addr", set_sdl_gl_get_proc_addr)?;
+
+    let set_sdl_get_window_size_addr = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
+        let result = sdl::set_get_window_size_addr(addr);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    hook.set("set_sdl_get_window_size_addr", set_sdl_get_window_size_addr)?;
 
     Ok(hook)
 }

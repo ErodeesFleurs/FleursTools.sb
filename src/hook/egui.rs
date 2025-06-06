@@ -1,6 +1,6 @@
-use egui::{Event, Key, Pos2, RawInput};
+use egui::{Key, RawInput};
 use glow::HasContext;
-use sdl2_sys::{SDL_Event, SDL_Scancode, SDL_BUTTON_LEFT, SDL_BUTTON_MIDDLE, SDL_BUTTON_RIGHT};
+use sdl2_sys::{SDL_BUTTON_LEFT, SDL_BUTTON_MIDDLE, SDL_BUTTON_RIGHT, SDL_Event, SDL_Scancode};
 
 pub struct Platform {
     pub raw_input: RawInput,
@@ -11,59 +11,70 @@ impl Platform {
         let mut raw_input = egui::RawInput {
             ..Default::default()
         };
-        let mut used = false;
+
         unsafe {
             match (*event).type_ {
-                1025 /* SDL_EventType::SDL_MOUSEBUTTONDOWN */ => {
+                1025 /* SDL_MOUSEBUTTONDOWN */ | 1026 /* SDL_MOUSEBUTTONUP */ => {
                     let event = &(*event).button;
-                    let mouse_btn = match event.button as u32 {
-                        SDL_BUTTON_LEFT => Some(egui::PointerButton::Primary),
-                        SDL_BUTTON_MIDDLE => Some(egui::PointerButton::Middle),
-                        SDL_BUTTON_RIGHT => Some(egui::PointerButton::Secondary),
-                        _ => None,
-                    };
-                    if let Some(button) = mouse_btn {
+                    let pressed = (*event).type_ == 1025; // 判断是按下还是释放
+                    if let Some(button) = match_mouse_button(event.button.into()) {
                         raw_input.events.push(egui::Event::PointerButton {
                             pos: egui::Pos2::new(event.x as f32, event.y as f32),
                             button,
-                            pressed: true,
-                            modifiers: Default::default()
+                            pressed,
+                            modifiers: Default::default(),
                         });
-                    };
+                    }
                 }
-                1026 /*SDL_EventType::SDL_MOUSEBUTTONUP*/ => {
-                    let event = &(*event).button;
-                    let mouse_btn = match event.button as u32 {
-                        SDL_BUTTON_LEFT => Some(egui::PointerButton::Primary),
-                        SDL_BUTTON_MIDDLE => Some(egui::PointerButton::Middle),
-                        SDL_BUTTON_RIGHT => Some(egui::PointerButton::Secondary),
-                        _ => None,
-                    };
-                    if let Some(button) = mouse_btn {
-                        raw_input.events.push(Event::PointerButton {
-                            pos: Pos2::new(event.x as f32, event.y as f32),
-                            button,
-                            pressed: false,
-                            modifiers: Default::default()
-                        });
-                    };
-                }
-                1024 /*SDL_EventType::SDL_MOUSEMOTION*/ => {
+                1024 /* SDL_MOUSEMOTION */ => {
                     let event = &(*event).motion;
-                    raw_input.events.push(Event::PointerMoved(Pos2::new(event.x as f32, event.y as f32)));
+                    raw_input.events.push(egui::Event::PointerMoved(egui::Pos2::new(
+                        event.x as f32,
+                        event.y as f32,
+                    )));
                 }
-                768 /*SDL_EventType::SDL_KEYDOWN*/ => {
-                    // let event = &(*event).key;
-                    // Unimplemented, ran out of time
+                768 /* SDL_KEYDOWN */ => {
+                    let event = &(*event).key;
+                    if let Some(key) = sdl_to_egui_key(event.keysym) {
+                        raw_input.events.push(egui::Event::Key {
+                            key,
+                            pressed: true,
+                            modifiers: Default::default(),
+                            physical_key: Some(key), // Use the same key as the logical key
+                            repeat: false, // Adjust based on your logic
+                        });
+                    }
                 }
-                _ => {}
+                769 /* SDL_KEYUP */ => {
+                        let event = &(*event).key;
+                        if let Some(key) = sdl_to_egui_key(event.keysym) {
+                            raw_input.events.push(egui::Event::Key {
+                                key,
+                                pressed: false,
+                                modifiers: Default::default(),
+                                physical_key: Some(key), // Use the same key as the logical key
+                                repeat: false, // Adjust based on your logic
+                            });
+                        }
+                    }
+                    _ => {}
+                }
             };
+            if !raw_input.events.is_empty() {
+                Some(Platform { raw_input })
+            } else {
+                None
+            }
         }
-        if !raw_input.events.is_empty() {
-            Some(Platform { raw_input })
-        } else {
-            None
-        }
+
+    }
+
+fn match_mouse_button(button: u32) -> Option<egui::PointerButton> {
+    match button {
+        SDL_BUTTON_LEFT => Some(egui::PointerButton::Primary),
+        SDL_BUTTON_MIDDLE => Some(egui::PointerButton::Middle),
+        SDL_BUTTON_RIGHT => Some(egui::PointerButton::Secondary),
+        _ => None,
     }
 }
 
@@ -150,8 +161,8 @@ pub struct EguiGlow {
 }
 
 impl EguiGlow {
-    pub fn new(gl: std::sync::Arc<glow::Context>, _: (u32, u32)) -> Self {
-        let painter = egui_glow::Painter::new(gl,  "", None, false).unwrap();
+    pub fn new(gl: std::sync::Arc<glow::Context>) -> Self {
+        let painter = egui_glow::Painter::new(gl, "", None, false).unwrap();
 
         let mode_rgb = unsafe { painter.gl().get_parameter_i32(glow::BLEND_EQUATION_RGB) as u32 };
         let mode_a = unsafe { painter.gl().get_parameter_i32(glow::BLEND_EQUATION_ALPHA) as u32 };
@@ -204,7 +215,9 @@ impl EguiGlow {
             self.painter.set_texture(id, &image_delta);
         }
 
-        let clipped_primitives = self.egui_ctx.tessellate(shapes, self.egui_ctx.pixels_per_point());
+        let clipped_primitives = self
+            .egui_ctx
+            .tessellate(shapes, self.egui_ctx.pixels_per_point());
         self.painter.paint_primitives(
             dimensions,
             self.egui_ctx.pixels_per_point(),
@@ -230,6 +243,7 @@ impl EguiGlow {
         };
     }
 
+    #[allow(unused)]
     pub fn destroy(&mut self) {
         self.painter.destroy()
     }
