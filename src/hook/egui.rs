@@ -59,15 +59,14 @@ impl Platform {
                     }
                     _ => {}
                 }
-            };
-            if !raw_input.events.is_empty() {
-                Some(Platform { raw_input })
-            } else {
-                None
-            }
+        };
+        if !raw_input.events.is_empty() {
+            Some(Platform { raw_input })
+        } else {
+            None
         }
-
     }
+}
 
 fn match_mouse_button(button: u32) -> Option<egui::PointerButton> {
     match button {
