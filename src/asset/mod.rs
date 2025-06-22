@@ -127,7 +127,7 @@ impl mlua::UserData for AssetReaderEnum {
                 AssetReaderEnum::PacketReader(reader) => reader.file(&path),
                 AssetReaderEnum::DirectoryReader(reader) => reader.file(&path),
             }
-            .map_err(|e| mlua::Error::external(e))
+            .map_err(|e| e.into())
         });
 
         methods.add_method("exist", |_, this, path: String| match this {
@@ -149,7 +149,7 @@ impl mlua::UserData for AssetReaderEnum {
                 AssetReaderEnum::PacketReader(reader) => reader.meta(key),
                 AssetReaderEnum::DirectoryReader(reader) => reader.meta(key),
             }
-            .map_err(|e| mlua::Error::external(e))
+            .map_err(|e| e.into())
         });
     }
 }
@@ -160,12 +160,12 @@ pub fn register_asset(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let asset_reader = lua.create_function(|_, path: String| -> mlua::Result<AssetReaderEnum> {
         if path.ends_with(".pak") {
             let cursor = Cursor::new(std::fs::read(path)?);
-            let packet_reader = PacketReader::new(cursor).map_err(|e| mlua::Error::external(e))?;
-            Ok(AssetReaderEnum::PacketReader(packet_reader))
+            let packet_reader = PacketReader::new(cursor);
+            Ok(AssetReaderEnum::PacketReader(packet_reader?))
         } else {
             let directory_reader =
-                directory::DirectoryReader::new(&path).map_err(|e| mlua::Error::external(e))?;
-            Ok(AssetReaderEnum::DirectoryReader(directory_reader))
+                directory::DirectoryReader::new(&path);
+            Ok(AssetReaderEnum::DirectoryReader(directory_reader?))
         }
     })?;
 

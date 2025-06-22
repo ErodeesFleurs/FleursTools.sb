@@ -3,6 +3,7 @@ mod state;
 mod egui;
 mod sdl;
 mod call;
+mod player;
 
 static PDB_PATH: &str = "./starbound.pdb";
 
@@ -69,6 +70,12 @@ pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         result.map_err(|e| mlua::Error::external(e))
     })?;
     hook.set("set_sdl_get_window_size_addr", set_sdl_get_window_size_addr)?;
+
+    let call_fn = lua.create_function(|_, (addr, parms, val): (u64, String, mlua::MultiValue)| -> mlua::Result<mlua::Value> {
+        let result = call::call_fn(addr, &parms, val);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    hook.set("call_fn", call_fn)?;
 
     Ok(hook)
 }

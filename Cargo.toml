@@ -8,7 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 sdl2-sys = { version = "0.37.0", features = ["static-link", "bundled"] }
-mlua = { version = "0.10.5", features = ["lua53", "vendored"] }
+mlua = { version = "0.10.5", features = ["lua53", "vendored", "anyhow"] }
 retour = { version = "0.3.1", features = ["static-detour"] }
 egui_glow = "0.31.1"
 byteorder = "1.5.0"
