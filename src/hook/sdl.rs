@@ -10,7 +10,8 @@ use super::egui::{EguiGlow, Platform};
 type SDLGLSwapWindowFn = extern "C" fn(window: *mut SDL_Window);
 type SDLGLGetProcAddressFn = extern "C" fn(proc: *const ffi::c_char) -> *mut ffi::c_void;
 type SDLPollEventFn = extern "C" fn(event: *mut SDL_Event) -> ffi::c_int;
-type SDLGetWindowSizeFn = extern "C" fn(window: *mut SDL_Window, w: *mut ffi::c_int, h: *mut ffi::c_int);
+type SDLGetWindowSizeFn =
+    extern "C" fn(window: *mut SDL_Window, w: *mut ffi::c_int, h: *mut ffi::c_int);
 
 static EGUI_RENDERER: LazyLock<Mutex<Option<EguiGlow>>> = LazyLock::new(|| Mutex::new(None));
 
@@ -21,7 +22,7 @@ static_detour! {
     static PollEventHook: extern "C" fn(*mut SDL_Event) -> ffi::c_int;
 }
 
-pub fn hook_gl_swap_window(addr: u64) -> anyhow::Result<bool> {
+fn hook_gl_swap_window(addr: u64) -> anyhow::Result<bool> {
     unsafe {
         GLSwapWindowHook.initialize(
             std::mem::transmute::<u64, SDLGLSwapWindowFn>(addr),
@@ -33,7 +34,7 @@ pub fn hook_gl_swap_window(addr: u64) -> anyhow::Result<bool> {
     Ok(true)
 }
 
-pub fn hook_poll_event(addr: u64) -> anyhow::Result<bool> {
+fn hook_poll_event(addr: u64) -> anyhow::Result<bool> {
     unsafe {
         PollEventHook.initialize(
             std::mem::transmute::<u64, SDLPollEventFn>(addr),
@@ -45,7 +46,7 @@ pub fn hook_poll_event(addr: u64) -> anyhow::Result<bool> {
     Ok(true)
 }
 
-pub fn set_gl_get_proc_addr(addr: u64) -> anyhow::Result<bool> {
+fn set_gl_get_proc_addr(addr: u64) -> anyhow::Result<bool> {
     let addr = unsafe { std::mem::transmute::<u64, SDLGLGetProcAddressFn>(addr) };
 
     let mut egui_renderer = EGUI_RENDERER
@@ -67,11 +68,11 @@ pub fn set_gl_get_proc_addr(addr: u64) -> anyhow::Result<bool> {
     Ok(true)
 }
 
-pub fn set_get_window_size_addr(addr: u64) -> anyhow::Result<bool> {
+fn set_get_window_size_addr(addr: u64) -> anyhow::Result<bool> {
     let mut inner: std::sync::MutexGuard<'_, u64> = SDL_GET_WINDOWS_SIZE_ADDR
         .lock()
         .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    
+
     *inner = addr;
 
     Ok(true)
@@ -128,4 +129,34 @@ fn poll_event_impl(event: *mut SDL_Event) -> ffi::c_int {
     }
 
     res
+}
+
+pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+    let sdl = lua.create_table()?;
+
+    let hook_gl_swap_window = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
+        let result = hook_gl_swap_window(addr);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    sdl.set("hook_gl_swap_window", hook_gl_swap_window)?;
+
+    let hook_poll_event = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
+        let result = hook_poll_event(addr);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    sdl.set("hook_poll_event", hook_poll_event)?;
+
+    let set_gl_get_proc_addr = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
+        let result = set_gl_get_proc_addr(addr);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    sdl.set("set_gl_get_proc_addr", set_gl_get_proc_addr)?;
+
+    let set_get_window_size_addr = lua.create_function(|_, addr: u64| -> mlua::Result<bool> {
+        let result = set_get_window_size_addr(addr);
+        result.map_err(|e| mlua::Error::external(e))
+    })?;
+    sdl.set("set_get_window_size_addr", set_get_window_size_addr)?;
+
+    Ok(sdl)
 }

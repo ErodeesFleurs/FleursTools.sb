@@ -4,6 +4,8 @@ use std::sync::{LazyLock, Mutex};
 static GLOBAL_SYMBOLS: LazyLock<Mutex<HashMap<String, u64>>> =
     LazyLock::new(|| HashMap::new().into());
 
+pub const PROGRAM_NAME: &str = "openstarbound";
+
 #[cfg(target_os = "linux")]
 mod linux {
     use super::*;
@@ -220,6 +222,46 @@ pub fn symbol_addr(name: &str) -> anyhow::Result<Option<u64>> {
         .find_map(|(k, &v)| if k.starts_with(name) { Some(v) } else { None }))
 }
 
+pub fn register_function(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+    let symbols_table = lua.create_table()?;
+
+    let init_symbols = lua.create_function(
+        |lua: &mlua::Lua, path: Option<String>| -> mlua::Result<mlua::Table> {
+            let symbols =
+                platform_parse_symbols(path).map_err(|e| mlua::Error::external(e))?;
+
+            let symbols_table = lua.create_table()?;
+
+            for (name, addr) in symbols {
+                symbols_table.set(name, addr)?;
+            }
+
+            Ok(symbols_table)
+        },
+    )?;
+    symbols_table.set("init_symbols", init_symbols)?;
+
+    let base_addr = lua.create_function(|_, name: String| -> mlua::Result<u64> {
+        let addr = platform_base_addr(&name);
+        addr.map_err(|e| mlua::Error::external(e))
+    })?;
+    symbols_table.set("base_addr", base_addr)?;
+
+    let symbol_addr = lua.create_function(|_, name: String| -> mlua::Result<Option<u64>> {
+        let addr = symbol_addr(&name);
+        addr.map_err(|e| mlua::Error::external(e))
+    })?;
+    symbols_table.set("symbol_addr", symbol_addr)?;
+
+    let dynamic_symbol_addr =
+        lua.create_function(|_, (module, name): (String, String)| -> mlua::Result<u64> {
+            let addr = platform_dynamic_symbol_addr(&module, &name);
+            addr.map_err(|e| mlua::Error::external(e))
+        })?;
+    symbols_table.set("dynamic_symbol_addr", dynamic_symbol_addr)?;
+
+    Ok(symbols_table)
+}
 
 // #[cfg(test)]
 // mod tests {
