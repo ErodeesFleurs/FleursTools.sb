@@ -4,13 +4,30 @@ use mlua::FromLua;
 use retour::static_detour;
 
 use crate::hook::symbol::{PROGRAM_NAME, platform_base_addr, symbol_addr};
-
 type IsAdminHookFn = extern "C" fn(player_ptr: u64) -> bool;
 type SetBusyStateFn = extern "C" fn(player_ptr: u64, busy_state: PlayerBusyState);
 
 static PLAYER_PTR: AtomicU64 = AtomicU64::new(0);
-const IS_ADMIN_SYMBOL: &str = "Star::Player::isAdmin() const";
-const SET_BUSY_STATE: &str = "Star::Player::setBusyState(Star::PlayerBusyState)";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum Symbols {
+    IsAdmin,
+    SetBusyState,
+}
+
+#[cfg(target_os = "linux")]
+const SYMBOL_ADDR_MAP: &[(Symbols, &str)] = &[
+    (Symbols::IsAdmin, "Star::Player::isAdmin() const"),
+    (
+        Symbols::SetBusyState,
+        "Star::Player::setBusyState(Star::PlayerBusyState)",
+    ),
+];
+#[cfg(target_os = "windows")]
+const SYMBOL_ADDR_MAP: &[(Symbols, &str)] = &[
+    (Symbols::IsAdmin, "Star::Player::isAdmin"),
+    (Symbols::SetBusyState, "Star::Player::setBusyState"),
+];
 
 static_detour! {
     static PlayerIsAdminHook: extern "C" fn(u64) -> bool;
@@ -28,18 +45,16 @@ enum PlayerBusyState {
 impl FromLua for PlayerBusyState {
     fn from_lua(lua_val: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match lua_val {
-            mlua::Value::String(s) => {
-                match s.to_string_lossy().as_ref() {
-                    "None" => Ok(PlayerBusyState::None),
-                    "Chatting" => Ok(PlayerBusyState::Chatting),
-                    "Menu" => Ok(PlayerBusyState::Menu),
-                    _ => Err(mlua::Error::FromLuaConversionError {
-                        from: "string",
-                        to: "PlayerBusyState".to_string(),
-                        message: Some("Invalid PlayerBusyState value".to_string()),
-                    }),
-                }
-            }
+            mlua::Value::String(s) => match s.to_string_lossy().as_ref() {
+                "None" => Ok(PlayerBusyState::None),
+                "Chatting" => Ok(PlayerBusyState::Chatting),
+                "Menu" => Ok(PlayerBusyState::Menu),
+                _ => Err(mlua::Error::FromLuaConversionError {
+                    from: "string",
+                    to: "PlayerBusyState".to_string(),
+                    message: Some("Invalid PlayerBusyState value".to_string()),
+                }),
+            },
             _ => Err(mlua::Error::FromLuaConversionError {
                 from: lua_val.type_name(),
                 to: "PlayerBusyState".to_string(),
@@ -49,14 +64,23 @@ impl FromLua for PlayerBusyState {
     }
 }
 
+fn get_symbol_name(symbol: Symbols) -> anyhow::Result<&'static str> {
+    SYMBOL_ADDR_MAP
+        .iter()
+        .find(|(sym, _)| *sym == symbol)
+        .map(|(_, name)| *name)
+        .ok_or_else(|| anyhow::anyhow!("Symbol '{:?}' not found in SYMBOL_ADDR_MAP", symbol))
+}
+
 fn get_main_ptr(_: &mlua::Lua, func: mlua::Function) -> anyhow::Result<u64> {
+    let symbol_name = get_symbol_name(Symbols::IsAdmin)?;
     let base_addr = platform_base_addr(PROGRAM_NAME)?;
-    let symbol_addr = match symbol_addr(IS_ADMIN_SYMBOL)? {
+    let symbol_addr = match symbol_addr(symbol_name)? {
         Some(addr) => addr,
         None => {
             return Err(anyhow::anyhow!(
-                "Symbol '{}' not found in program '{}'",
-                IS_ADMIN_SYMBOL,
+                "Symbol '{:?}' not found in program '{}'",
+                Symbols::IsAdmin,
                 PROGRAM_NAME
             ));
         }
@@ -87,13 +111,14 @@ fn player_is_admin_impl(player_ptr: u64) -> bool {
 }
 
 fn set_busy_state(player_ptr: u64, busy_state: PlayerBusyState) -> anyhow::Result<()> {
+    let symbol_name = get_symbol_name(Symbols::SetBusyState)?;
     let base_addr = platform_base_addr(PROGRAM_NAME)?;
-    let symbol_addr = match symbol_addr(SET_BUSY_STATE)? {
+    let symbol_addr = match symbol_addr(symbol_name)? {
         Some(addr) => addr,
         None => {
             return Err(anyhow::anyhow!(
-                "Symbol '{}' not found in program '{}'",
-                SET_BUSY_STATE,
+                "Symbol '{:?}' not found in program '{}'",
+                Symbols::SetBusyState,
                 PROGRAM_NAME
             ));
         }
