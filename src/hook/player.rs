@@ -35,7 +35,7 @@ static_detour! {
 static IS_ADMIN_HOOK_IS_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 #[repr(C)]
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PlayerBusyState {
     None,
     Chatting,
